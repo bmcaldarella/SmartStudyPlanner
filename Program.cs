@@ -6,6 +6,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddHttpContextAccessor();   // Needed for services that get current user
+
+builder.Services.AddCascadingAuthenticationState();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
