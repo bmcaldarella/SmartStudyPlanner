@@ -1,0 +1,181 @@
+@page "/Account/Register"
+@using Microsoft.AspNetCore.Identity
+@using SmartStudyPlanner.Models
+@using SmartStudyPlanner.Models.InputModels
+
+@inject UserManager<User> UserManager
+@inject SignInManager<User> SignInManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Register - Study Planner</PageTitle>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg">
+                <div class="card-body p-5">
+                    <h2 class="card-title text-center mb-4">📚 Create Your Account</h2>
+                    <p class="text-center text-muted mb-4">Join Study Planner and start managing your study tasks</p>
+
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @successMessage
+                            <button type="button" class="btn-close" @onclick="() => successMessage = null"></button>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @errorMessage
+                            <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+                        </div>
+                    }
+
+                    @if (registrationErrors != null && registrationErrors.Any())
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <strong>Registration Failed:</strong>
+                            <ul class="mb-0 mt-2">
+                                @foreach (var error in registrationErrors)
+                                {
+                                    <li>@error</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <EditForm Model="Input" FormName="RegisterForm" OnValidSubmit="HandleRegister">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="alert alert-danger" role="alert" />
+
+                        <div class="mb-3">
+                            <label for="firstName" class="form-label">First Name</label>
+                            <InputText id="firstName" @bind-Value="Input.FirstName" class="form-control"
+                                       placeholder="First name" />
+                            <ValidationMessage For="() => Input.FirstName" class="text-danger d-block mt-1" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="lastName" class="form-label">Last Name</label>
+                            <InputText id="lastName" @bind-Value="Input.LastName" class="form-control"
+                                       placeholder="Last name" />
+                            <ValidationMessage For="() => Input.LastName" class="text-danger d-block mt-1" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <InputText id="email" @bind-Value="Input.Email" class="form-control"
+                                       placeholder="Enter your email" type="email" />
+                            <ValidationMessage For="() => Input.Email" class="text-danger d-block mt-1" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <InputText id="password" @bind-Value="Input.Password" class="form-control"
+                                       placeholder="Enter password" type="password" />
+                            <ValidationMessage For="() => Input.Password" class="text-danger d-block mt-1" />
+                            <small class="text-muted d-block mt-1">
+                                Minimum 6 characters. Example: <code>Password123!</code>
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm Password</label>
+                            <InputText id="confirmPassword" @bind-Value="Input.ConfirmPassword" class="form-control"
+                                       placeholder="Confirm password" type="password" />
+                            <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger d-block mt-1" />
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 mb-3" disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <span>Creating Account...</span>
+                            }
+                            else
+                            {
+                                <span>Create Account</span>
+                            }
+                        </button>
+                    </EditForm>
+
+                    <div class="text-center">
+                        <p class="mb-0">
+                            Already have an account?
+                            <a href="/Account/Login" class="text-decoration-none">Login here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private RegisterInput Input { get; set; } = new();
+
+    private string? errorMessage;
+    private string? successMessage;
+    private List<string>? registrationErrors;
+    private bool isSubmitting;
+
+    private async Task HandleRegister()
+    {
+        isSubmitting = true;
+        registrationErrors = null;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            // Validate that passwords match
+            if (Input.Password != Input.ConfirmPassword)
+            {
+                errorMessage = "Passwords do not match.";
+                isSubmitting = false;
+                return;
+            }
+
+            // Create new user
+            var user = new User
+            {
+                UserName = Input.Email,
+                Email = Input.Email,
+                FirstName = Input.FirstName,
+                LastName = Input.LastName,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var result = await UserManager.CreateAsync(user, Input.Password);
+
+            if (result.Succeeded)
+            {
+                // This triggers the redirect to the login page
+                NavigationManager.NavigateTo("/Account/Login");
+            }
+            else
+            {
+                registrationErrors = result.Errors.Select(e => e.Description).ToList();
+            }
+        }
+        catch (NavigationException)
+        {
+            // THIS IS THE FIX: 
+            // We catch Blazor's redirect command and throw it back so the page actually changes!
+            throw; 
+        }
+        catch (Exception ex)
+        {
+            // This will now only catch actual crashes
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}
+

@@ -1,0 +1,118 @@
+@page "/Account/Login"
+@using Microsoft.AspNetCore.Identity
+@using SmartStudyPlanner.Models
+@using SmartStudyPlanner.Models.InputModels
+
+@inject SignInManager<User> SignInManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Login - Study Planner</PageTitle>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg">
+                <div class="card-body p-5">
+                    <h2 class="card-title text-center mb-4">📚 Login to Study Planner</h2>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @errorMessage
+                            <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+                        </div>
+                    }
+
+                    <EditForm Model="Input" FormName="LoginForm" OnValidSubmit="HandleLogin">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="alert alert-danger" role="alert" />
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <InputText id="email" @bind-Value="Input.Email" class="form-control"
+                                       placeholder="Enter your email" type="email" />
+                            <ValidationMessage For="() => Input.Email" class="text-danger d-block mt-1" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <InputText id="password" @bind-Value="Input.Password" class="form-control"
+                                       placeholder="Enter your password" type="password" />
+                            <ValidationMessage For="() => Input.Password" class="text-danger d-block mt-1" />
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <InputCheckbox id="rememberMe" @bind-Value="Input.RememberMe" class="form-check-input" />
+                            <label class="form-check-label" for="rememberMe">
+                                Remember me
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 mb-3">
+                            Sign In
+                        </button>
+                    </EditForm>
+
+                    <div class="text-center">
+                        <p class="mb-0">
+                            Don't have an account?
+                            <a href="/Account/Register" class="text-decoration-none">Register here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    [SupplyParameterFromForm]
+    private LoginInput Input { get; set; } = new();
+
+    private string? errorMessage;
+
+    private async Task HandleLogin()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(Input.Email) || string.IsNullOrWhiteSpace(Input.Password))
+            {
+                errorMessage = "Please enter both email and password.";
+                return;
+            }
+
+            var result = await SignInManager.PasswordSignInAsync(
+                Input.Email,
+                Input.Password,
+                Input.RememberMe,
+                lockoutOnFailure: true);
+
+            if (result.Succeeded)
+            {
+                NavigationManager.NavigateTo("/");
+            }
+            else if (result.IsLockedOut)
+            {
+                errorMessage = "Account is locked out due to multiple failed login attempts. Please try again later.";
+            }
+            else if (result.RequiresTwoFactor)
+            {
+                NavigationManager.NavigateTo("/Account/LoginWith2fa", forceLoad: true);
+            }
+            else
+            {
+                errorMessage = "Invalid email or password. Please try again.";
+            }
+        }
+        catch (NavigationException)
+        {
+            // THIS IS THE FIX:
+            // We catch Blazor's redirect command and throw it back so the page actually changes!
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // This will now only catch actual crashes
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+    }
+}
