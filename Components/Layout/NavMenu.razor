@@ -1,36 +1,48 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿﻿@using Microsoft.AspNetCore.Components.Authorization
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">📚 Study Planner</a>
     </div>
 </div>
 
 
+
 <div class="nav-scrollable"
      onclick="document.querySelector('.navbar-toggler').checked = false">
     <nav class="flex-column">
+
         <div class="nav-item px-3">
             <NavLink href="" class="nav-link" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
+                <span class="bi bi-house-door" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink href="/about" class="nav-link">
+                <span class="bi bi-info-circle" aria-hidden="true"></span> About
             </NavLink>
         </div>
 
         <AuthorizeView>
             <Authorized>
+                <hr class="nav-divider" />
+
                 <div class="nav-item px-3">
                     <NavLink href="/planner" class="nav-link">
-                        <span class="oi oi-list-rich" aria-hidden="true"></span> Dashboard
+                        <span class="bi bi-grid-3x3-gap" aria-hidden="true"></span> Dashboard
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink href="/planner/add" class="nav-link">
-                        <span class="oi oi-plus" aria-hidden="true"></span> Add New Task
+                        <span class="bi bi-plus-circle" aria-hidden="true"></span> Add New Task
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink href="/planner/subjects" class="nav-link">
-                        <span class="oi oi-book" aria-hidden="true"></span> My Subjects
+                        <span class="bi bi-book" aria-hidden="true"></span> My Subjects
                     </NavLink>
                 </div>
             </Authorized>
