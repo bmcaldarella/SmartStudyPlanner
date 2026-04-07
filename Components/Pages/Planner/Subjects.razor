@@ -1,0 +1,312 @@
+@page "/planner/subjects"
+@rendermode InteractiveServer
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject SubjectService SubjectService
+
+<PageTitle>My Subjects - Study Planner</PageTitle>
+
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h1 class="h3 mb-3">My Subjects</h1>
+                    <p class="text-muted">Create and manage the subjects you study.</p>
+
+                    @if (!string.IsNullOrWhiteSpace(formError))
+                    {
+                        <div class="alert alert-danger">@formError</div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(successMessage))
+                    {
+                        <div class="alert alert-success">@successMessage</div>
+                    }
+
+                    <EditForm Model="subjectModel" OnValidSubmit="HandleSubmit" FormName="subjectForm">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="alert alert-danger" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Subject Name</label>
+                            <InputText class="form-control" @bind-Value="subjectModel.Name" />
+                            <ValidationMessage For="() => subjectModel.Name" class="text-danger" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Description</label>
+                            <InputTextArea class="form-control" rows="3" @bind-Value="subjectModel.Description" />
+                        </div>
+
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    <span>Saving...</span>
+                                }
+                                else if (isEditing)
+                                {
+                                    <span>Update Subject</span>
+                                }
+                                else
+                                {
+                                    <span>Create Subject</span>
+                                }
+                            </button>
+
+                            @if (isEditing)
+                            {
+                                <button type="button" class="btn btn-outline-secondary" @onclick="ResetForm">
+                                    Cancel
+                                </button>
+                            }
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="h4 mb-0">Your Subjects</h2>
+                        <span class="badge text-bg-light">@subjects.Count total</span>
+                    </div>
+
+                    @if (isLoading)
+                    {
+                        <div class="text-center py-5">
+                            <div class="spinner-border" role="status"></div>
+                            <p class="mt-3 text-muted">Loading subjects...</p>
+                        </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(loadError))
+                    {
+                        <div class="alert alert-danger">@loadError</div>
+                    }
+                    else if (!subjects.Any())
+                    {
+                        <div class="text-center py-5">
+                            <p class="text-muted mb-0">No subjects yet. Create your first one on the left.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var subject in subjects)
+                            {
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <span class="rounded-circle d-inline-block"
+                                                      style="width:14px;height:14px;background:@(subject.Color ?? "#0d6efd");"></span>
+                                                <h5 class="mb-0">@subject.Name</h5>
+                                            </div>
+
+                                            @if (!string.IsNullOrWhiteSpace(subject.Description))
+                                            {
+                                                <p class="text-muted mb-2">@subject.Description</p>
+                                            }
+
+                                            <div class="small text-muted">
+                                                Created on @subject.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => StartEdit(subject)">
+                                                Edit
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteSubject(subject.Id)">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Subject> subjects = new();
+    private SubjectFormModel subjectModel = new();
+    private bool isLoading = true;
+    private bool isSubmitting;
+    private bool isEditing;
+    private int editingSubjectId;
+
+    private string? formError;
+    private string? loadError;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSubjects();
+    }
+
+    private async Task LoadSubjects()
+    {
+        isLoading = true;
+        loadError = null;
+
+        try
+        {
+            subjects = await SubjectService.GetSubjectsByUserAsync();
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Unable to load subjects: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        formError = null;
+        successMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            if (isEditing)
+            {
+                var updated = new Subject
+                {
+                    Id = editingSubjectId,
+                    Name = subjectModel.Name,
+                    Description = subjectModel.Description,
+                    Color = subjectModel.Color
+                };
+
+                var ok = await SubjectService.UpdateSubjectAsync(updated);
+
+                if (!ok)
+                {
+                    formError = "Subject not found or you do not have permission to edit it.";
+                    return;
+                }
+
+                successMessage = "Subject updated successfully.";
+            }
+            else
+            {
+                var subject = new Subject
+                {
+                    Name = subjectModel.Name,
+                    Description = subjectModel.Description,
+                    Color = GetRandomColor()
+                };
+
+                await SubjectService.CreateSubjectAsync(subject);
+                successMessage = "Subject created successfully.";
+            }
+
+            ResetForm();
+            await LoadSubjects();
+        }
+        catch (Exception ex)
+        {
+            formError = $"Unable to save subject: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void StartEdit(Subject subject)
+    {
+        isEditing = true;
+        editingSubjectId = subject.Id;
+
+        subjectModel = new SubjectFormModel
+        {
+            Name = subject.Name,
+            Description = subject.Description,
+            Color = string.IsNullOrWhiteSpace(subject.Color) ? GetRandomColor() : subject.Color
+        };
+
+        formError = null;
+        successMessage = null;
+    }
+
+    private async Task DeleteSubject(int subjectId)
+    {
+        formError = null;
+        successMessage = null;
+
+        try
+        {
+            var ok = await SubjectService.DeleteSubjectAsync(subjectId);
+
+            if (!ok)
+            {
+                formError = "Subject not found or you do not have permission to delete it.";
+                return;
+            }
+
+            if (isEditing && editingSubjectId == subjectId)
+            {
+                ResetForm();
+            }
+
+            successMessage = "Subject deleted successfully.";
+            await LoadSubjects();
+        }
+        catch (Exception ex)
+        {
+            formError = $"Unable to delete subject: {ex.Message}";
+        }
+    }
+
+    private void ResetForm()
+    {
+        subjectModel = new SubjectFormModel();
+        isEditing = false;
+        editingSubjectId = 0;
+        formError = null;
+    }
+
+    private string GetRandomColor()
+    {
+        var colors = new List<string>
+        {
+            "#0d6efd",
+            "#198754",
+            "#dc3545",
+            "#ffc107",
+            "#6f42c1",
+            "#fd7e14",
+            "#20c997",
+            "#d63384",
+            "#6610f2",
+            "#6c757d"
+        };
+
+        var random = new Random();
+        return colors[random.Next(colors.Count)];
+    }
+
+    public class SubjectFormModel
+    {
+        [Required]
+        [StringLength(100, ErrorMessage = "Name can have a maximum of 100 characters.")]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(300, ErrorMessage = "Description can have a maximum of 300 characters.")]
+        public string? Description { get; set; }
+
+        public string Color { get; set; } = string.Empty;
+    }
+}
