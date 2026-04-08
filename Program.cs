@@ -75,8 +75,6 @@ app.MapPost("/Account/Logout", async (SignInManager<User> signInManager) =>
     return Results.Redirect("/");
 });
 
-var dbPath = @"C:\home\data";
-Directory.CreateDirectory(dbPath); // ensures folder exists
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
