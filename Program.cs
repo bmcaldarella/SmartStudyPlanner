@@ -75,14 +75,10 @@ app.MapPost("/Account/Logout", async (SignInManager<User> signInManager) =>
     return Results.Redirect("/");
 });
 
-// Apply migrations if needed (development only)
-if (app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    using (var scope = app.Services.CreateScope())
-    {
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        db.Database.Migrate();
-    }
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate(); // Creates tables if missing
 }
 
 app.Run();
