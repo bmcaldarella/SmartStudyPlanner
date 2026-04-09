@@ -10,7 +10,19 @@
         <div class="top-row px-4">
             <AuthorizeView>
                 <Authorized>
-                    <span>Hello, @context.User.Identity?.Name!</span>
+                    @{
+                        var username = context.User.Identity?.Name?.Split('@')[0];
+
+                        var firstPart = username?
+                            .Split(new[] { '.', '_' }, StringSplitOptions.RemoveEmptyEntries)
+                            .FirstOrDefault();
+
+                        var displayName = string.IsNullOrEmpty(firstPart)
+                            ? "User"
+                            : char.ToUpper(firstPart[0]) + firstPart.Substring(1);
+                    }
+
+                    <span>Hello, @displayName!</span>
                     <form method="post" action="/Account/Logout" style="display: inline;">
                         <button type="submit" class="btn btn-link nav-link ms-3"
                                 style="padding: 0; border: 0; background: none;">Log out</button>
@@ -28,3 +40,4 @@
         </article>
     </main>
 </div>
+
