@@ -106,7 +106,7 @@
                         @if (!pendingTasks.Any())
                         {
                             <div class="text-center py-4">
-                                <p class="text-muted mb-3">You don’t have any pending tasks yet.</p>
+                                <p class="text-muted mb-3">You're caught up! No pending tasks yet.</p>
                                 <a href="/planner/add" class="btn btn-primary">Create your first task</a>
                             </div>
                         }
@@ -123,7 +123,9 @@
                                                     <span>@(task.Subject?.Name ?? "No subject")</span>
                                                     <span>@GetPriorityLabel(task.Priority)</span>
                                                     <span>@FormatDeadline(task.Deadline)</span>
-                                                    <span class="badge text-bg-warning">Pending</span>
+                                                    <span class="badge @GetStatusBadgeClass(task)">
+                                                        @GetStatusLabel(task)
+                                                    </span>
                                                 </div>
 
                                                 @if (!string.IsNullOrWhiteSpace(task.Description))
@@ -319,4 +321,42 @@
     }
 
     private int selectedSubjectId = 0; // 0 = all
+
+    private string GetStatusBadgeClass(StudyTask task)
+    {
+        if (task.IsCompleted)
+            return "text-bg-success";
+
+        if (task.Deadline.HasValue)
+        {
+            var now = DateTime.Now;
+
+            if (task.Deadline.Value < now)
+                return "text-bg-danger"; // overdue
+
+            if (task.Deadline.Value < now.AddDays(2))
+                return "text-bg-warning"; // due soon
+        }
+
+        return "text-bg-secondary"; // normal pending
+    }
+
+    private string GetStatusLabel(StudyTask task)
+    {
+        if (task.IsCompleted)
+            return "Completed";
+
+        if (task.Deadline.HasValue)
+        {
+            var now = DateTime.Now;
+
+            if (task.Deadline.Value < now)
+                return "Overdue";
+
+            if (task.Deadline.Value < now.AddDays(2))
+                return "Due Soon";
+        }
+
+        return "Pending";
+    }
 }
