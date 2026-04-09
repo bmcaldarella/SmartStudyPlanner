@@ -1,6 +1,6 @@
 @page "/planner"
 @rendermode InteractiveServer
-@* @attribute [Microsoft.AspNetCore.Authorization.Authorize] *@
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject TaskService TaskService
 @inject SubjectService SubjectService
 
@@ -238,26 +238,10 @@
 
         try
         {
-            @* allTasks = await TaskService.GetTasksByUserAsync();
+            allTasks = await TaskService.GetTasksByUserAsync();
             pendingTasks = await TaskService.GetPendingTasksAsync();
             completedTasks = await TaskService.GetCompletedTasksAsync();
-            subjects = await SubjectService.GetSubjectsByUserAsync(); *@
-
-            allTasks = new List<StudyTask>
-{
-    new StudyTask { Id = 1, Title = "Math Homework", Priority = 3, Deadline = DateTime.Now.AddDays(1), IsCompleted = false
-},
-    new StudyTask { Id = 2, Title = "History Reading", Priority = 2, Deadline = DateTime.Now.AddDays(3), IsCompleted = false
-},
-    new StudyTask { Id = 3, Title = "Science Project", Priority = 1, Deadline = DateTime.Now.AddDays(5), IsCompleted = false
-},
-    new StudyTask { Id = 4, Title = "English Essay", Priority = 3, Deadline = DateTime.Now.AddDays(2), IsCompleted = true }
-};
-
-            pendingTasks = allTasks.Where(t => !t.IsCompleted).ToList();
-            completedTasks = allTasks.Where(t => t.IsCompleted).ToList();
-
-            subjects = new List<Subject>(); // keep simple for now
+            subjects = await SubjectService.GetSubjectsByUserAsync();
 
         }
         catch (Exception ex)
