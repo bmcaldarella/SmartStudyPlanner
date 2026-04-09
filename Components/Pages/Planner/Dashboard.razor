@@ -1,6 +1,6 @@
 @page "/planner"
 @rendermode InteractiveServer
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@* @attribute [Microsoft.AspNetCore.Authorization.Authorize] *@
 @inject TaskService TaskService
 @inject SubjectService SubjectService
 
@@ -85,6 +85,15 @@
                                 <option value="high">High</option>
                                 <option value="medium">Medium</option>
                                 <option value="low">Low</option>
+                            </select>
+
+                            <select class="form-select w-auto" @bind="selectedSubjectId">
+                                <option value="0">All Subjects</option>
+
+                                @foreach (var subject in subjects)
+                                {
+                                    <option value="@subject.Id">@subject.Name</option>
+                                }
                             </select>
 
                             <select class="form-select w-auto" @bind="sortOption">
@@ -229,10 +238,26 @@
 
         try
         {
-            allTasks = await TaskService.GetTasksByUserAsync();
+            @* allTasks = await TaskService.GetTasksByUserAsync();
             pendingTasks = await TaskService.GetPendingTasksAsync();
             completedTasks = await TaskService.GetCompletedTasksAsync();
-            subjects = await SubjectService.GetSubjectsByUserAsync();
+            subjects = await SubjectService.GetSubjectsByUserAsync(); *@
+
+            allTasks = new List<StudyTask>
+{
+    new StudyTask { Id = 1, Title = "Math Homework", Priority = 3, Deadline = DateTime.Now.AddDays(1), IsCompleted = false
+},
+    new StudyTask { Id = 2, Title = "History Reading", Priority = 2, Deadline = DateTime.Now.AddDays(3), IsCompleted = false
+},
+    new StudyTask { Id = 3, Title = "Science Project", Priority = 1, Deadline = DateTime.Now.AddDays(5), IsCompleted = false
+},
+    new StudyTask { Id = 4, Title = "English Essay", Priority = 3, Deadline = DateTime.Now.AddDays(2), IsCompleted = true }
+};
+
+            pendingTasks = allTasks.Where(t => !t.IsCompleted).ToList();
+            completedTasks = allTasks.Where(t => t.IsCompleted).ToList();
+
+            subjects = new List<Subject>(); // keep simple for now
 
         }
         catch (Exception ex)
@@ -285,13 +310,19 @@
     {
         var tasks = pendingTasks.AsEnumerable();
 
-        // FILTER
+        // PRIORITY FILTER
         if (filterStatus == "high")
             tasks = tasks.Where(t => t.Priority == 3);
         else if (filterStatus == "medium")
             tasks = tasks.Where(t => t.Priority == 2);
         else if (filterStatus == "low")
             tasks = tasks.Where(t => t.Priority == 1);
+
+        // SUBJECT FILTER
+        if (selectedSubjectId != 0)
+        {
+            tasks = tasks.Where(t => t.SubjectId == selectedSubjectId);
+        }
 
         // SORT
         tasks = sortOption switch
@@ -302,4 +333,6 @@
 
         return tasks.Take(8);
     }
+
+    private int selectedSubjectId = 0; // 0 = all
 }
