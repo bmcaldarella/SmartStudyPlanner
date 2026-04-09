@@ -2,7 +2,6 @@ using SmartStudyPlanner.Components;
 using SmartStudyPlanner.Data;
 using SmartStudyPlanner.Models;
 using SmartStudyPlanner.Services;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,11 +11,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-
 // Add Entity Framework Core DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ??
-        throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")));
+    options.UseSqlite(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")
+    ));
 
 // Add Identity services
 builder.Services.AddIdentity<User, IdentityRole>(options =>
@@ -36,9 +36,10 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
     // User settings
     options.User.RequireUniqueEmail = true;
 })
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
 
+builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 
 // Register app services
@@ -51,7 +52,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
     app.UseHttpsRedirection();
 }
@@ -60,7 +60,6 @@ app.UseStatusCodePagesWithReExecute("/not-found", "?code={0}");
 
 app.UseStaticFiles();
 
-// Add authentication and authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -78,7 +77,7 @@ app.MapPost("/Account/Logout", async (SignInManager<User> signInManager) =>
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate(); // Creates tables if missing
+    db.Database.EnsureCreated(); // Creates tables directly if they do not exist
 }
 
 app.Run();
