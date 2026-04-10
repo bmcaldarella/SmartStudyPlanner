@@ -1,46 +1,38 @@
-.page {
-    display: flex;
+.app-shell {
     min-height: 100vh;
-    flex-direction: row;
+    background: #f8fafc;
 }
 
-.sidebar {
-    width: 260px;
-    background: linear-gradient(180deg, #2b3e50 0%, #1e2a38 100%);
-    color: white;
-    box-shadow: 3px 0 8px rgba(0, 0, 0, 0.15);
-    flex-shrink: 0;
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(15, 23, 42, 0.96);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-main {
-    flex: 1;
-    background-color: #f8f9fa;
-    overflow-y: auto;
-}
-
-.top-row {
-    background-color: white;
-    border-bottom: 1px solid #dee2e6;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding: 0 2rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    z-index: 10;
+.main-shell {
+    width: 100%;
 }
 
 .content {
-    padding: 2rem;
-    max-width: 1200px;
+    width: min(100% - 2rem, 1280px);
+    margin: 0 auto;
+    padding: 2rem 0;
 }
 
-@media (max-width: 992px) {
-    .page {
-        flex-direction: column;
+@media (max-width: 768px) {
+    .content {
+        width: min(100% - 1rem, 1280px);
+        padding: 1.25rem 0;
     }
-    .sidebar {
-        width: 100%;
-        height: auto;
-    }
+}
+
+
+.welcome-text {
+    color: #e2e8f0;
+    font-weight: 600;
+    font-size: 0.92rem;
+    letter-spacing: -0.01em;
 }

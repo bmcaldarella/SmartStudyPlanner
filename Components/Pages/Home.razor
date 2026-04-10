@@ -5,7 +5,7 @@
 <PageTitle>Home - Study Planner</PageTitle>
 
 <div class="container text-center py-5">
-    <h1 class="display-4 mb-3">📚 Welcome to Study Planner</h1>
+    <h1 class="display-4 mb-3"> Study Planner</h1>
     <p class="lead mb-5">
         Your simple, focused tool to help you manage study tasks, subjects, and deadlines effectively.
     </p>
@@ -17,7 +17,7 @@
                     Go to My Dashboard →
                 </a>
             </div>
-            <p class="text-muted">Welcome back, @context.User.Identity?.Name!</p>
+            <p class="text-muted">Welcome back, @context.User.Identity?.Name?.Split('@')[0]</p>
         </Authorized>
         <NotAuthorized>
             <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
@@ -36,7 +36,7 @@
         <div class="col-md-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">✅ Task Management</h5>
+                    <h5 class="card-title">Task Management</h5>
                     <p class="card-text">
                         Create, edit, delete, and mark your study tasks as completed with deadlines.
                     </p>
@@ -46,7 +46,7 @@
         <div class="col-md-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">📚 Organize by Subject</h5>
+                    <h5 class="card-title"> Organize by Subject</h5>
                     <p class="card-text">
                         Group your tasks by course or subject to stay focused on one area at a time.
                     </p>
@@ -56,7 +56,7 @@
         <div class="col-md-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">📅 Smart Deadlines</h5>
+                    <h5 class="card-title"> Smart Deadlines</h5>
                     <p class="card-text">
                         Never miss an assignment again. Deadlines are clearly shown and highlighted.
                     </p>
