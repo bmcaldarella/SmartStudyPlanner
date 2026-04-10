@@ -78,27 +78,58 @@
                             <span class="badge text-bg-light">@pendingTasks.Count pending</span>
                         </div>
 
+                        <div class="d-flex gap-2 mb-3 flex-wrap">
+
+                            <select class="form-select w-auto" @bind="filterStatus">
+                                <option value="all">All Priorities</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+
+                            <select class="form-select w-auto" @bind="selectedSubjectId">
+                                <option value="0">All Subjects</option>
+
+                                @foreach (var subject in subjects)
+                                {
+                                    <option value="@subject.Id">@subject.Name</option>
+                                }
+                            </select>
+
+                            <select class="form-select w-auto" @bind="sortOption">
+                                <option value="deadline">Sort by Deadline</option>
+                                <option value="priority">Sort by Priority</option>
+                            </select>
+
+                        </div>
+
                         @if (!pendingTasks.Any())
                         {
                             <div class="text-center py-4">
-                                <p class="text-muted mb-3">You don’t have any pending tasks yet.</p>
+                                <p class="text-muted mb-3">You're caught up! No pending tasks yet.</p>
                                 <a href="/planner/add" class="btn btn-primary">Create your first task</a>
                             </div>
                         }
                         else
                         {
                             <div class="list-group list-group-flush">
-                                @foreach (var task in pendingTasks.Take(8))
+                                @foreach (var task in GetFilteredTasks())
                                 {
-                                    <div class="list-group-item px-0">
-                                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                    <div class="list-group-item px-0 mb-2" style="
+                                        border-left: 7px solid @(task.Subject?.Color ?? "#0d6efd");
+                                        padding-left: 12px;
+                                        border-radius: 8px;
+                                        ">
+                                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap" style="margin-left: 8px;">
                                             <div>
                                                 <h6 class="mb-1">@task.Title</h6>
                                                 <div class="small text-muted d-flex gap-3 flex-wrap">
                                                     <span>@(task.Subject?.Name ?? "No subject")</span>
                                                     <span>@GetPriorityLabel(task.Priority)</span>
                                                     <span>@FormatDeadline(task.Deadline)</span>
-                                                    <span class="badge text-bg-warning">Pending</span>
+                                                    <span class="badge @GetStatusBadgeClass(task)">
+                                                        @GetStatusLabel(task)
+                                                    </span>
                                                 </div>
 
                                                 @if (!string.IsNullOrWhiteSpace(task.Description))
@@ -164,8 +195,12 @@
                             <div class="list-group list-group-flush">
                                 @foreach (var task in completedTasks.Take(5))
                                 {
-                                    <div class="list-group-item px-0">
-                                        <div class="d-flex justify-content-between align-items-center gap-3">
+                                    <div class="list-group-item px-0 mb-2" style="
+                                        border-left: 7px solid @(task.Subject?.Color ?? "#0d6efd");
+                                        padding-left: 12px;
+                                        border-radius: 8px;
+                                        ">
+                                        <div class="d-flex justify-content-between align-items-center gap-3" style="margin-left: 8px;">
                                             <div>
                                                 <div class="fw-semibold">@task.Title</div>
                                                 <div class="small text-muted d-flex gap-2 flex-wrap">
@@ -176,7 +211,8 @@
                                             </div>
                                             <div class="d-flex gap-2">
                                                 <a href="/planner/edit/@task.Id" class="btn btn-sm btn-outline-primary">Edit</a>
-                                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => MarkPending(task.Id)">
+                                                <button class="btn btn-sm btn-outline-secondary"
+                                                        @onclick="() => MarkPending(task.Id)">
                                                     Undo
                                                 </button>
                                             </div>
@@ -216,6 +252,7 @@
             pendingTasks = await TaskService.GetPendingTasksAsync();
             completedTasks = await TaskService.GetCompletedTasksAsync();
             subjects = await SubjectService.GetSubjectsByUserAsync();
+
         }
         catch (Exception ex)
         {
@@ -257,5 +294,77 @@
     private int GetTaskCountForSubject(int subjectId)
     {
         return allTasks.Count(t => t.SubjectId == subjectId);
+    }
+
+    @* creating a filtered list *@
+    private string filterStatus = "all"; // all, high, medium, low
+    private string sortOption = "deadline"; // deadline or priority
+
+    private IEnumerable<StudyTask> GetFilteredTasks()
+    {
+        var tasks = pendingTasks.AsEnumerable();
+
+        // PRIORITY FILTER
+        if (filterStatus == "high")
+            tasks = tasks.Where(t => t.Priority == 3);
+        else if (filterStatus == "medium")
+            tasks = tasks.Where(t => t.Priority == 2);
+        else if (filterStatus == "low")
+            tasks = tasks.Where(t => t.Priority == 1);
+
+        // SUBJECT FILTER
+        if (selectedSubjectId != 0)
+        {
+            tasks = tasks.Where(t => t.SubjectId == selectedSubjectId);
+        }
+
+        // SORT
+        tasks = sortOption switch
+        {
+            "priority" => tasks.OrderByDescending(t => t.Priority),
+            _ => tasks.OrderBy(t => t.Deadline ?? DateTime.MaxValue)
+        };
+
+        return tasks.Take(8);
+    }
+
+    private int selectedSubjectId = 0; // 0 = all
+
+    private string GetStatusBadgeClass(StudyTask task)
+    {
+        if (task.IsCompleted)
+            return "text-bg-success";
+
+        if (task.Deadline.HasValue)
+        {
+            var now = DateTime.Now;
+
+            if (task.Deadline.Value < now)
+                return "text-bg-danger"; // overdue
+
+            if (task.Deadline.Value < now.AddDays(2))
+                return "text-bg-warning"; // due soon
+        }
+
+        return "text-bg-secondary"; // normal pending
+    }
+
+    private string GetStatusLabel(StudyTask task)
+    {
+        if (task.IsCompleted)
+            return "Completed";
+
+        if (task.Deadline.HasValue)
+        {
+            var now = DateTime.Now;
+
+            if (task.Deadline.Value < now)
+                return "Overdue";
+
+            if (task.Deadline.Value < now.AddDays(2))
+                return "Due Soon";
+        }
+
+        return "Pending";
     }
 }
