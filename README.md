@@ -3,7 +3,7 @@
 ## 🌐 Live Application
 
 You can access the deployed application here:
-👉 **[Smart Study Planner Live Site]((https://smartstudyplanner-glk5.onrender.com/))**
+👉 **[Smart Study Planner Live Site](https://smartstudyplanner-glk5.onrender.com/)**
 
 ---
 
