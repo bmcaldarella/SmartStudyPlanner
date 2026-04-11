@@ -39,8 +39,13 @@ main {
     .page {
         flex-direction: column;
     }
+
     .sidebar {
         width: 100%;
-        height: auto;
+        height: 250px;
+    }
+
+    .nav-scrollable {
+        max-height: 250px; /* 👈 match sidebar */
     }
 }
