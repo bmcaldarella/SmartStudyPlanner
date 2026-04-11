@@ -10,7 +10,7 @@ You can access the deployed application here:
 ## 🎥 Demo Video
 
 Watch a walkthrough of the application:
-👉 **[Project Demo Video]()**
+👉 **[Project Demo Video](https://youtu.be/zTVBvL8_9-A)**
 
 ---
 
