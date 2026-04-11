@@ -18,6 +18,7 @@
                 <p class="text-muted mb-0">Update your study task.</p>
             </div>
 
+            <!-- Displays error messages -->
             @if (!string.IsNullOrWhiteSpace(errorMessage))
             {
                 <div class="alert alert-danger">@errorMessage</div>
@@ -25,6 +26,7 @@
 
             @if (isLoading)
             {
+                <!-- Loading state while fetching task data -->
                 <div class="text-center py-5">
                     <div class="spinner-border" role="status"></div>
                     <p class="mt-3 text-muted">Loading task...</p>
@@ -34,6 +36,8 @@
             {
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-4">
+
+                        <!-- Form for editing an existing task -->
                         <EditForm Model="taskModel" OnValidSubmit="HandleSubmit" FormName="editTaskForm">
                             <DataAnnotationsValidator />
                             <ValidationSummary class="alert alert-danger" />
@@ -51,6 +55,8 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Subject</label>
+
+                                    <!-- Dropdown populated with user's subjects -->
                                     <InputSelect class="form-select" @bind-Value="taskModel.SubjectId">
                                         @foreach (var subject in subjects)
                                         {
@@ -61,6 +67,8 @@
 
                                 <div class="col-md-6">
                                     <label class="form-label">Priority</label>
+
+                                    <!-- Task priority selection -->
                                     <InputSelect class="form-select" @bind-Value="taskModel.Priority">
                                         <option value="1">Low</option>
                                         <option value="2">Medium</option>
@@ -71,10 +79,13 @@
 
                             <div class="mt-3 mb-3">
                                 <label class="form-label">Deadline</label>
+
+                                <!-- Stores deadline as string and converts it later -->
                                 <input type="datetime-local" class="form-control" value="@deadlineInput" @onchange="OnDeadlineChanged" />
                             </div>
 
                             <div class="form-check mb-4">
+                                <!-- Allows user to mark task as completed -->
                                 <InputCheckbox class="form-check-input" @bind-Value="taskModel.IsCompleted" />
                                 <label class="form-check-label">Completed</label>
                             </div>
@@ -86,6 +97,7 @@
                                 <a href="/planner" class="btn btn-outline-secondary">Cancel</a>
                             </div>
                         </EditForm>
+
                     </div>
                 </div>
             }
@@ -94,21 +106,33 @@
 </div>
 
 @code {
+    // Task ID received from route parameter
     [Parameter]
     public int TaskId { get; set; }
 
+    // Data collections and form model
     private List<Subject> subjects = new();
     private EditTaskModel taskModel = new();
+
+    // UI state
     private bool isLoading = true;
     private bool isSubmitting;
     private string? errorMessage;
+
+    // Stores deadline input as string for conversion
     private string? deadlineInput;
 
+    /// <summary>
+    /// Loads task and subject data when component initializes
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
     }
 
+    /// <summary>
+    /// Retrieves task and subjects from services
+    /// </summary>
     private async Task LoadData()
     {
         isLoading = true;
@@ -125,6 +149,7 @@
                 return;
             }
 
+            // Map task data to editable model
             taskModel = new EditTaskModel
             {
                 Id = task.Id,
@@ -135,6 +160,7 @@
                 IsCompleted = task.IsCompleted
             };
 
+            // Format deadline for datetime input field
             deadlineInput = task.Deadline?.ToString("yyyy-MM-ddTHH:mm");
         }
         catch (Exception ex)
@@ -147,11 +173,17 @@
         }
     }
 
+    /// <summary>
+    /// Updates deadline value when user selects a new date/time
+    /// </summary>
     private void OnDeadlineChanged(ChangeEventArgs e)
     {
         deadlineInput = e.Value?.ToString();
     }
 
+    /// <summary>
+    /// Handles form submission and updates the task
+    /// </summary>
     private async Task HandleSubmit()
     {
         isSubmitting = true;
@@ -161,11 +193,13 @@
         {
             DateTime? deadline = null;
 
+            // Convert string input to DateTime
             if (!string.IsNullOrWhiteSpace(deadlineInput))
             {
                 deadline = DateTime.Parse(deadlineInput);
             }
 
+            // Create updated task object
             var updatedTask = new StudyTask
             {
                 Id = taskModel.Id,
@@ -177,6 +211,7 @@
                 IsCompleted = taskModel.IsCompleted
             };
 
+            // Update task via service
             var ok = await TaskService.UpdateTaskAsync(updatedTask);
 
             if (!ok)
@@ -185,6 +220,7 @@
                 return;
             }
 
+            // Redirect back to dashboard
             NavigationManager.NavigateTo("/planner");
         }
         catch (Exception ex)
@@ -197,6 +233,7 @@
         }
     }
 
+    // View model for editing tasks
     public class EditTaskModel
     {
         public int Id { get; set; }

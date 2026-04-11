@@ -6,6 +6,10 @@ using SmartStudyPlanner.Models;
 
 namespace SmartStudyPlanner.Services;
 
+/// <summary>
+/// Provides functionality for managing subjects, including
+/// creation, retrieval, updates, and deletion for the current user.
+/// </summary>
 public class SubjectService
 {
     private readonly ApplicationDbContext _context;
@@ -22,22 +26,32 @@ public class SubjectService
         _authStateProvider = authStateProvider;
     }
 
+    /// <summary>
+    /// Retrieves the currently authenticated user.
+    /// Throws an exception if no user is authenticated.
+    /// </summary>
     private async Task<User> GetCurrentUserAsync()
     {
         var authState = await _authStateProvider.GetAuthenticationStateAsync();
         var principal = authState.User;
 
+        // Ensure the user is authenticated
         if (principal.Identity?.IsAuthenticated != true)
             throw new InvalidOperationException("No authenticated user found.");
 
         var user = await _userManager.GetUserAsync(principal);
 
+        // Ensure the user exists in the database
         if (user == null)
             throw new InvalidOperationException("Authenticated user could not be loaded.");
 
         return user;
     }
 
+    /// <summary>
+    /// Retrieves all subjects that belong to the current user,
+    /// ordered alphabetically by name.
+    /// </summary>
     public async Task<List<Subject>> GetSubjectsByUserAsync()
     {
         var user = await GetCurrentUserAsync();
@@ -48,6 +62,10 @@ public class SubjectService
             .ToListAsync();
     }
 
+    /// <summary>
+    /// Retrieves all subjects for the current user,
+    /// including their associated tasks.
+    /// </summary>
     public async Task<List<Subject>> GetSubjectsWithTasksAsync()
     {
         var user = await GetCurrentUserAsync();
@@ -59,6 +77,11 @@ public class SubjectService
             .ToListAsync();
     }
 
+    /// <summary>
+    /// Retrieves a specific subject by ID for the current user,
+    /// including its related tasks.
+    /// Returns null if not found or not owned by the user.
+    /// </summary>
     public async Task<Subject?> GetSubjectByIdAsync(int subjectId)
     {
         var user = await GetCurrentUserAsync();
@@ -68,10 +91,14 @@ public class SubjectService
             .FirstOrDefaultAsync(s => s.Id == subjectId && s.UserId == user.Id);
     }
 
+    /// <summary>
+    /// Creates a new subject for the current user.
+    /// </summary>
     public async Task<Subject> CreateSubjectAsync(Subject subject)
     {
         var user = await GetCurrentUserAsync();
 
+        // Assign ownership and creation timestamp
         subject.UserId = user.Id;
         subject.CreatedAt = DateTime.UtcNow;
 
@@ -81,6 +108,10 @@ public class SubjectService
         return subject;
     }
 
+    /// <summary>
+    /// Updates an existing subject if it belongs to the current user.
+    /// Returns false if the subject is not found or unauthorized.
+    /// </summary>
     public async Task<bool> UpdateSubjectAsync(Subject updatedSubject)
     {
         var user = await GetCurrentUserAsync();
@@ -91,6 +122,7 @@ public class SubjectService
         if (existingSubject == null)
             return false;
 
+        // Update allowed fields
         existingSubject.Name = updatedSubject.Name;
         existingSubject.Description = updatedSubject.Description;
         existingSubject.Color = updatedSubject.Color;
@@ -99,6 +131,10 @@ public class SubjectService
         return true;
     }
 
+    /// <summary>
+    /// Deletes a subject and its related tasks if it belongs to the current user.
+    /// Returns false if not found or unauthorized.
+    /// </summary>
     public async Task<bool> DeleteSubjectAsync(int subjectId)
     {
         var user = await GetCurrentUserAsync();
@@ -116,6 +152,9 @@ public class SubjectService
         return true;
     }
 
+    /// <summary>
+    /// Returns the total number of tasks associated with a subject for the current user.
+    /// </summary>
     public async Task<int> GetTaskCountBySubjectAsync(int subjectId)
     {
         var user = await GetCurrentUserAsync();
@@ -124,6 +163,9 @@ public class SubjectService
             .CountAsync(t => t.SubjectId == subjectId && t.UserId == user.Id);
     }
 
+    /// <summary>
+    /// Returns the number of completed tasks for a subject.
+    /// </summary>
     public async Task<int> GetCompletedTaskCountBySubjectAsync(int subjectId)
     {
         var user = await GetCurrentUserAsync();
@@ -132,6 +174,10 @@ public class SubjectService
             .CountAsync(t => t.SubjectId == subjectId && t.UserId == user.Id && t.IsCompleted);
     }
 
+    /// <summary>
+    /// Checks whether a subject belongs to the current user.
+    /// Used for authorization validation.
+    /// </summary>
     public async Task<bool> SubjectBelongsToCurrentUserAsync(int subjectId)
     {
         var user = await GetCurrentUserAsync();

@@ -7,22 +7,27 @@
 
 <div class="container py-4">
     <div class="row g-4">
+
+        <!-- LEFT SIDE: Create / Edit Subject Form -->
         <div class="col-lg-5">
             <div class="card shadow-sm border-0">
                 <div class="card-body p-4">
                     <h1 class="h3 mb-3">My Subjects</h1>
                     <p class="text-muted">Create and manage the subjects you study.</p>
 
+                    <!-- Displays form-related errors -->
                     @if (!string.IsNullOrWhiteSpace(formError))
                     {
                         <div class="alert alert-danger">@formError</div>
                     }
 
+                    <!-- Displays success messages -->
                     @if (!string.IsNullOrWhiteSpace(successMessage))
                     {
                         <div class="alert alert-success">@successMessage</div>
                     }
 
+                    <!-- Form for creating or editing a subject -->
                     <EditForm Model="subjectModel" OnValidSubmit="HandleSubmit" FormName="subjectForm">
                         <DataAnnotationsValidator />
                         <ValidationSummary class="alert alert-danger" />
@@ -40,6 +45,8 @@
 
                         <div class="d-flex gap-2 flex-wrap">
                             <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+
+                                <!-- Button changes based on state -->
                                 @if (isSubmitting)
                                 {
                                     <span class="spinner-border spinner-border-sm me-2"></span>
@@ -55,6 +62,7 @@
                                 }
                             </button>
 
+                            <!-- Cancel button only appears in edit mode -->
                             @if (isEditing)
                             {
                                 <button type="button" class="btn btn-outline-secondary" @onclick="ResetForm">
@@ -67,9 +75,11 @@
             </div>
         </div>
 
+        <!-- RIGHT SIDE: List of subjects -->
         <div class="col-lg-7">
             <div class="card shadow-sm border-0">
                 <div class="card-body p-4">
+
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h2 class="h4 mb-0">Your Subjects</h2>
                         <span class="badge text-bg-light">@subjects.Count total</span>
@@ -77,6 +87,7 @@
 
                     @if (isLoading)
                     {
+                        <!-- Loading state -->
                         <div class="text-center py-5">
                             <div class="spinner-border" role="status"></div>
                             <p class="mt-3 text-muted">Loading subjects...</p>
@@ -84,38 +95,46 @@
                     }
                     else if (!string.IsNullOrWhiteSpace(loadError))
                     {
+                        <!-- Error loading subjects -->
                         <div class="alert alert-danger">@loadError</div>
                     }
                     else if (!subjects.Any())
                     {
+                        <!-- Empty state -->
                         <div class="text-center py-5">
                             <p class="text-muted mb-0">No subjects yet. Create your first one on the left.</p>
                         </div>
                     }
                     else
                     {
+                        <!-- List of subjects -->
                         <div class="list-group list-group-flush">
                             @foreach (var subject in subjects)
                             {
                                 <div class="list-group-item px-0">
                                     <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                                         <div>
+
+                                            <!-- Subject color + name -->
                                             <div class="d-flex align-items-center gap-2 mb-1">
                                                 <span class="rounded-circle d-inline-block"
                                                       style="width:14px;height:14px;background:@(subject.Color ?? "#0d6efd");"></span>
                                                 <h5 class="mb-0">@subject.Name</h5>
                                             </div>
 
+                                            <!-- Optional description -->
                                             @if (!string.IsNullOrWhiteSpace(subject.Description))
                                             {
                                                 <p class="text-muted mb-2">@subject.Description</p>
                                             }
 
+                                            <!-- Creation date -->
                                             <div class="small text-muted">
                                                 Created on @subject.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")
                                             </div>
                                         </div>
 
+                                        <!-- Action buttons -->
                                         <div class="d-flex gap-2">
                                             <button class="btn btn-sm btn-outline-primary" @onclick="() => StartEdit(subject)">
                                                 Edit
@@ -124,34 +143,49 @@
                                                 Delete
                                             </button>
                                         </div>
+
                                     </div>
                                 </div>
                             }
                         </div>
                     }
+
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 
 @code {
+    // List of subjects for the current user
     private List<Subject> subjects = new();
+
+    // Form model for creating/editing subjects
     private SubjectFormModel subjectModel = new();
+
+    // UI state variables
     private bool isLoading = true;
     private bool isSubmitting;
     private bool isEditing;
     private int editingSubjectId;
 
+    // Messages for UI feedback
     private string? formError;
     private string? loadError;
     private string? successMessage;
 
+    /// <summary>
+    /// Loads subjects when component initializes
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         await LoadSubjects();
     }
 
+    /// <summary>
+    /// Retrieves subjects from the service
+    /// </summary>
     private async Task LoadSubjects()
     {
         isLoading = true;
@@ -171,6 +205,9 @@
         }
     }
 
+    /// <summary>
+    /// Handles form submission for creating or updating subjects
+    /// </summary>
     private async Task HandleSubmit()
     {
         formError = null;
@@ -181,6 +218,7 @@
         {
             if (isEditing)
             {
+                // Update existing subject
                 var updated = new Subject
                 {
                     Id = editingSubjectId,
@@ -201,6 +239,7 @@
             }
             else
             {
+                // Create new subject
                 var subject = new Subject
                 {
                     Name = subjectModel.Name,
@@ -225,6 +264,9 @@
         }
     }
 
+    /// <summary>
+    /// Populates form with subject data for editing
+    /// </summary>
     private void StartEdit(Subject subject)
     {
         isEditing = true;
@@ -241,6 +283,9 @@
         successMessage = null;
     }
 
+    /// <summary>
+    /// Deletes a subject
+    /// </summary>
     private async Task DeleteSubject(int subjectId)
     {
         formError = null;
@@ -256,6 +301,7 @@
                 return;
             }
 
+            // Reset form if the deleted subject was being edited
             if (isEditing && editingSubjectId == subjectId)
             {
                 ResetForm();
@@ -270,6 +316,9 @@
         }
     }
 
+    /// <summary>
+    /// Resets the form to default (create mode)
+    /// </summary>
     private void ResetForm()
     {
         subjectModel = new SubjectFormModel();
@@ -278,6 +327,9 @@
         formError = null;
     }
 
+    /// <summary>
+    /// Generates a random color for new subjects
+    /// </summary>
     private string GetRandomColor()
     {
         var colors = new List<string>
@@ -298,6 +350,7 @@
         return colors[random.Next(colors.Count)];
     }
 
+    // Form model with validation
     public class SubjectFormModel
     {
         [Required]

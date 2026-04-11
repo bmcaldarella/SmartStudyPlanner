@@ -20,6 +20,7 @@
 
     @if (isLoading)
     {
+        <!-- Loading state while fetching dashboard data -->
         <div class="text-center py-5">
             <div class="spinner-border" role="status"></div>
             <p class="mt-3 text-muted">Loading your dashboard...</p>
@@ -27,11 +28,14 @@
     }
     else if (!string.IsNullOrWhiteSpace(errorMessage))
     {
+        <!-- Displays error if data fails to load -->
         <div class="alert alert-danger">@errorMessage</div>
     }
     else
     {
+        <!-- Summary statistics cards -->
         <div class="row g-4 mb-4">
+            <!-- Total tasks -->
             <div class="col-md-3">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-body">
@@ -41,6 +45,7 @@
                 </div>
             </div>
 
+            <!-- Pending tasks -->
             <div class="col-md-3">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-body">
@@ -50,6 +55,7 @@
                 </div>
             </div>
 
+            <!-- Completed tasks -->
             <div class="col-md-3">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-body">
@@ -59,6 +65,7 @@
                 </div>
             </div>
 
+            <!-- Subjects count -->
             <div class="col-md-3">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-body">
@@ -69,17 +76,22 @@
             </div>
         </div>
 
+        <!-- Main dashboard content -->
         <div class="row g-4">
             <div class="col-lg-7">
                 <div class="card shadow-sm border-0">
                     <div class="card-body">
+
+                        <!-- Section header with pending count -->
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h4 class="mb-0">Upcoming Tasks</h4>
                             <span class="badge text-bg-light">@pendingTasks.Count pending</span>
                         </div>
 
+                        <!-- Filtering and sorting controls -->
                         <div class="d-flex gap-2 mb-3 flex-wrap">
 
+                            <!-- Filter by priority -->
                             <select class="form-select w-auto" @bind="filterStatus">
                                 <option value="all">All Priorities</option>
                                 <option value="high">High</option>
@@ -87,6 +99,7 @@
                                 <option value="low">Low</option>
                             </select>
 
+                            <!-- Filter by subject -->
                             <select class="form-select w-auto" @bind="selectedSubjectId">
                                 <option value="0">All Subjects</option>
 
@@ -96,6 +109,7 @@
                                 }
                             </select>
 
+                            <!-- Sorting options -->
                             <select class="form-select w-auto" @bind="sortOption">
                                 <option value="deadline">Sort by Deadline</option>
                                 <option value="priority">Sort by Priority</option>
@@ -105,6 +119,7 @@
 
                         @if (!pendingTasks.Any())
                         {
+                            <!-- Empty state when no pending tasks -->
                             <div class="text-center py-4">
                                 <p class="text-muted mb-3">You're caught up! No pending tasks yet.</p>
                                 <a href="/planner/add" class="btn btn-primary">Create your first task</a>
@@ -112,6 +127,7 @@
                         }
                         else
                         {
+                            <!-- Task list -->
                             <div class="list-group list-group-flush">
                                 @foreach (var task in GetFilteredTasks())
                                 {
@@ -123,10 +139,14 @@
                                         <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap" style="margin-left: 8px;">
                                             <div>
                                                 <h6 class="mb-1">@task.Title</h6>
+
+                                                <!-- Task metadata -->
                                                 <div class="small text-muted d-flex gap-3 flex-wrap">
                                                     <span>@(task.Subject?.Name ?? "No subject")</span>
                                                     <span>@GetPriorityLabel(task.Priority)</span>
                                                     <span>@FormatDeadline(task.Deadline)</span>
+
+                                                    <!-- Status badge based on deadline and completion -->
                                                     <span class="badge @GetStatusBadgeClass(task)">
                                                         @GetStatusLabel(task)
                                                     </span>
@@ -138,6 +158,7 @@
                                                 }
                                             </div>
 
+                                            <!-- Task actions -->
                                             <div class="d-flex gap-2">
                                                 <a href="/planner/edit/@task.Id" class="btn btn-sm btn-outline-primary">Edit</a>
                                                 <button class="btn btn-sm btn-success" @onclick="() => MarkCompleted(task.Id)">
@@ -153,6 +174,7 @@
                 </div>
             </div>
 
+            <!-- Sidebar: subjects + completed tasks -->
             <div class="col-lg-5">
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body">
@@ -165,6 +187,7 @@
                         }
                         else
                         {
+                            <!-- List of subjects with task counts -->
                             <div class="list-group list-group-flush">
                                 @foreach (var subject in subjects)
                                 {
@@ -192,6 +215,7 @@
                         }
                         else
                         {
+                            <!-- Recently completed tasks -->
                             <div class="list-group list-group-flush">
                                 @foreach (var task in completedTasks.Take(5))
                                 {
@@ -209,6 +233,8 @@
                                                     <span class="badge text-bg-success">Completed</span>
                                                 </div>
                                             </div>
+
+                                            <!-- Undo completion -->
                                             <div class="d-flex gap-2">
                                                 <a href="/planner/edit/@task.Id" class="btn btn-sm btn-outline-primary">Edit</a>
                                                 <button class="btn btn-sm btn-outline-secondary"
@@ -229,18 +255,27 @@
 </div>
 
 @code {
+    // Data collections used in the dashboard
     private List<StudyTask> allTasks = new();
     private List<StudyTask> pendingTasks = new();
     private List<StudyTask> completedTasks = new();
     private List<Subject> subjects = new();
+
+    // UI state
     private bool isLoading = true;
     private string? errorMessage;
 
+    /// <summary>
+    /// Loads all dashboard data when the page initializes
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
     }
 
+    /// <summary>
+    /// Retrieves tasks and subjects from services
+    /// </summary>
     private async Task LoadData()
     {
         isLoading = true;
@@ -252,7 +287,6 @@
             pendingTasks = await TaskService.GetPendingTasksAsync();
             completedTasks = await TaskService.GetCompletedTasksAsync();
             subjects = await SubjectService.GetSubjectsByUserAsync();
-
         }
         catch (Exception ex)
         {
@@ -264,23 +298,35 @@
         }
     }
 
+    /// <summary>
+    /// Marks a task as completed and refreshes the dashboard
+    /// </summary>
     private async Task MarkCompleted(int taskId)
     {
         await TaskService.MarkTaskAsCompletedAsync(taskId);
         await LoadData();
     }
 
+    /// <summary>
+    /// Marks a task as pending (undo completion)
+    /// </summary>
     private async Task MarkPending(int taskId)
     {
         await TaskService.MarkTaskAsPendingAsync(taskId);
         await LoadData();
     }
 
+    /// <summary>
+    /// Formats deadline for display
+    /// </summary>
     private string FormatDeadline(DateTime? deadline)
     {
         return deadline.HasValue ? deadline.Value.ToString("dd MMM yyyy, HH:mm") : "No deadline";
     }
 
+    /// <summary>
+    /// Converts numeric priority into readable label
+    /// </summary>
     private string GetPriorityLabel(int priority)
     {
         return priority switch
@@ -291,20 +337,27 @@
         };
     }
 
+    /// <summary>
+    /// Returns number of tasks for a given subject
+    /// </summary>
     private int GetTaskCountForSubject(int subjectId)
     {
         return allTasks.Count(t => t.SubjectId == subjectId);
     }
 
-    @* creating a filtered list *@
+    // Filtering and sorting options
     private string filterStatus = "all"; // all, high, medium, low
     private string sortOption = "deadline"; // deadline or priority
+    private int selectedSubjectId = 0; // 0 = all
 
+    /// <summary>
+    /// Applies filtering and sorting to pending tasks
+    /// </summary>
     private IEnumerable<StudyTask> GetFilteredTasks()
     {
         var tasks = pendingTasks.AsEnumerable();
 
-        // PRIORITY FILTER
+        // Filter by priority
         if (filterStatus == "high")
             tasks = tasks.Where(t => t.Priority == 3);
         else if (filterStatus == "medium")
@@ -312,13 +365,13 @@
         else if (filterStatus == "low")
             tasks = tasks.Where(t => t.Priority == 1);
 
-        // SUBJECT FILTER
+        // Filter by subject
         if (selectedSubjectId != 0)
         {
             tasks = tasks.Where(t => t.SubjectId == selectedSubjectId);
         }
 
-        // SORT
+        // Apply sorting
         tasks = sortOption switch
         {
             "priority" => tasks.OrderByDescending(t => t.Priority),
@@ -328,8 +381,9 @@
         return tasks.Take(8);
     }
 
-    private int selectedSubjectId = 0; // 0 = all
-
+    /// <summary>
+    /// Returns CSS class for task status badge
+    /// </summary>
     private string GetStatusBadgeClass(StudyTask task)
     {
         if (task.IsCompleted)
@@ -346,9 +400,12 @@
                 return "text-bg-warning"; // due soon
         }
 
-        return "text-bg-secondary"; // normal pending
+        return "text-bg-secondary";
     }
 
+    /// <summary>
+    /// Returns readable status label for a task
+    /// </summary>
     private string GetStatusLabel(StudyTask task)
     {
         if (task.IsCompleted)

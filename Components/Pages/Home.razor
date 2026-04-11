@@ -5,21 +5,29 @@
 <PageTitle>Home - Study Planner</PageTitle>
 
 <div class="container text-center py-5">
+
+    <!-- APP TITLE AND DESCRIPTION -->
     <h1 class="display-4 mb-3"> Study Planner</h1>
     <p class="lead mb-5">
         Your simple, focused tool to help you manage study tasks, subjects, and deadlines effectively.
     </p>
 
+    <!-- Shows different UI depending on whether the user is logged in -->
     <AuthorizeView>
         <Authorized>
+            <!-- Logged-in users: go to dashboard -->
             <div class="mb-4">
                 <a href="/planner" class="btn btn-primary btn-lg px-5">
                     Go to My Dashboard →
                 </a>
             </div>
+
+            <!-- Displays user's name -->
             <p class="text-muted">Welcome back, @context.User.Identity?.Name?.Split('@')[0]</p>
         </Authorized>
+
         <NotAuthorized>
+            <!-- Guests: show register and login options -->
             <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
                 <a href="/Account/Register" class="btn btn-success btn-lg px-5">
                     Get Started - Register
@@ -31,8 +39,9 @@
         </NotAuthorized>
     </AuthorizeView>
 
-    <!-- Features Section -->
+    <!-- FEATURES SECTION: Highlights main app functionality -->
     <div class="row mt-5 g-4">
+
         <div class="col-md-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
@@ -43,6 +52,7 @@
                 </div>
             </div>
         </div>
+
         <div class="col-md-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
@@ -53,6 +63,7 @@
                 </div>
             </div>
         </div>
+
         <div class="col-md-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
@@ -63,5 +74,6 @@
                 </div>
             </div>
         </div>
+
     </div>
 </div>
