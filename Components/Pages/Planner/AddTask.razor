@@ -16,6 +16,7 @@
                 <p class="text-muted mb-0">Create a study task and assign it to one of your subjects.</p>
             </div>
 
+            <!-- Displays success or error messages -->
             @if (!string.IsNullOrWhiteSpace(successMessage))
             {
                 <div class="alert alert-success">@successMessage</div>
@@ -26,6 +27,7 @@
                 <div class="alert alert-danger">@errorMessage</div>
             }
 
+            <!-- Loading state while fetching subjects -->
             @if (isLoading)
             {
                 <div class="text-center py-5">
@@ -35,6 +37,7 @@
             }
             else if (!subjects.Any())
             {
+                <!-- Shown when user has no subjects yet -->
                 <div class="card shadow-sm border-0">
                     <div class="card-body text-center py-5">
                         <h4 class="mb-3">You need a subject first</h4>
@@ -49,6 +52,8 @@
             {
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-4">
+
+                        <!-- Form used to create a new study task -->
                         <EditForm Model="taskModel" OnValidSubmit="HandleSubmit" FormName="taskForm">
                             <DataAnnotationsValidator />
                             <ValidationSummary class="alert alert-danger" />
@@ -67,6 +72,8 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Subject</label>
+
+                                    <!-- Dropdown populated with user's subjects -->
                                     <InputSelect class="form-select" @bind-Value="taskModel.SubjectId">
                                         <option value="0">Select a subject</option>
                                         @foreach (var subject in subjects)
@@ -74,11 +81,14 @@
                                             <option value="@subject.Id">@subject.Name</option>
                                         }
                                     </InputSelect>
+
                                     <ValidationMessage For="() => taskModel.SubjectId" class="text-danger" />
                                 </div>
 
                                 <div class="col-md-6">
                                     <label class="form-label">Priority</label>
+
+                                    <!-- Task priority selection -->
                                     <InputSelect class="form-select" @bind-Value="taskModel.Priority">
                                         <option value="1">Low</option>
                                         <option value="2">Medium</option>
@@ -89,6 +99,8 @@
 
                             <div class="mt-3 mb-4">
                                 <label class="form-label">Deadline</label>
+
+                                <!-- Stores deadline as string and converts it later -->
                                 <input type="datetime-local" class="form-control" value="@deadlineInput" @onchange="OnDeadlineChanged" />
                             </div>
 
@@ -108,6 +120,7 @@
                                 <a href="/planner" class="btn btn-outline-secondary">Cancel</a>
                             </div>
                         </EditForm>
+
                     </div>
                 </div>
             }
@@ -116,19 +129,32 @@
 </div>
 
 @code {
+    // List of subjects used to populate the dropdown
     private List<Subject> subjects = new();
+
+    // Model bound to the form inputs
     private CreateTaskModel taskModel = new();
+
+    // UI state variables
     private bool isLoading = true;
     private bool isSubmitting;
     private string? errorMessage;
     private string? successMessage;
+
+    // Stores deadline input as string for manual parsing
     private string? deadlineInput;
 
+    /// <summary>
+    /// Loads subjects when the component initializes
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         await LoadSubjects();
     }
 
+    /// <summary>
+    /// Retrieves the current user's subjects from the service
+    /// </summary>
     private async Task LoadSubjects()
     {
         isLoading = true;
@@ -148,16 +174,23 @@
         }
     }
 
+    /// <summary>
+    /// Updates the deadline value when the user selects a date/time
+    /// </summary>
     private void OnDeadlineChanged(ChangeEventArgs e)
     {
         deadlineInput = e.Value?.ToString();
     }
 
+    /// <summary>
+    /// Handles form submission and creates a new study task
+    /// </summary>
     private async Task HandleSubmit()
     {
         errorMessage = null;
         successMessage = null;
 
+        // Ensure a subject is selected
         if (taskModel.SubjectId <= 0)
         {
             errorMessage = "Please select a subject.";
@@ -170,11 +203,13 @@
         {
             DateTime? deadline = null;
 
+            // Convert string input into DateTime
             if (!string.IsNullOrWhiteSpace(deadlineInput))
             {
                 deadline = DateTime.Parse(deadlineInput);
             }
 
+            // Create task entity
             var task = new StudyTask
             {
                 Title = taskModel.Title,
@@ -184,9 +219,12 @@
                 Deadline = deadline
             };
 
+            // Save task using service
             await TaskService.CreateTaskAsync(task);
 
             successMessage = "Task created successfully.";
+
+            // Redirect to planner dashboard
             NavigationManager.NavigateTo("/planner");
         }
         catch (Exception ex)
@@ -199,6 +237,7 @@
         }
     }
 
+    // View model used for task creation form
     public class CreateTaskModel
     {
         [Required]
